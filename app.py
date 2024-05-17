@@ -12,6 +12,12 @@ SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 # Initialize Supabase client
 sb = supabase.create_client(SUPABASE_URL, SUPABASE_KEY)
 
+@app.route('/favicon.ico')
+def favicon():
+    return send_file('favicon.ico', mimetype='image/x-icon')
+
+
+
 def extract_review_count(url):
     try:
         response = requests.get(url)
@@ -79,7 +85,7 @@ def submit_review(salesman_id):
     review_extraction_url = "https://www.google.com/search?q=tharakans+royal+jewellery+kunnamkulam&sca_esv=89411bb37f4aa9f8&sca_upv=1&sxsrf=ADLYWILIV0DyK2N0KvOJ-LjlgLynA8U_DQ%3A1715775994290&ei=-qlEZtysEZWbseMPityT2AY&oq=tharakans+royal+kunnamkulam&gs_lp=Egxnd3Mtd2l6LXNlcnAiG3RoYXJha2FucyByb3lhbCBrdW5uYW1rdWxhbSoCCAAyBhAAGAgYHjIGEAAYCBgeMggQABiABBiiBDIIEAAYgAQYogRIgDBQ4hNYtx9wAXgBkAEAmAHDAaABowqqAQQwLjEwuAEByAEA-AEBmAIKoALsCcICChAAGLADGNYEGEfCAg0QLhiABBjHARgNGK8BwgIIEAAYBxgIGB7CAggQABgIGA0YHsICHBAuGIAEGMcBGA0YrwEYlwUY3AQY3gQY4ATYAQHCAgsQABiABBiGAxiKBZgDAIgGAZAGCLoGBggBEAEYFJIHAzEuOaAH4z0&sclient=gws-wiz-serp"
 
     # Wait some time to allow user to submit the review
-    time.sleep(10)  # Increased wait time to 10 seconds
+
 
     new_count = extract_review_count(review_extraction_url)
     if new_count is None:

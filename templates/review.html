@@ -2,12 +2,30 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Review Submission</title>
+    <link rel="shortcut icon" href="../favicon.ico" type="image/x-icon">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .btn-primary {
+            background-color: #4CAF50;
+        }
+        .btn-secondary {
+            background-color: #008CBA;
+        }
+        .btn-primary:hover, .btn-secondary:hover {
+            opacity: 0.8;
+        }
+    </style>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            document.getElementById("submit-review-btn").addEventListener("click", function() {
-                const salesmanId = this.getAttribute("data-salesman-id");
+            const submitBtn = document.getElementById("submit-review-btn");
+            const salesmanId = submitBtn.getAttribute("data-salesman-id");
+
+            submitBtn.addEventListener("click", function() {
                 submitReview(salesmanId);
+                submitBtn.disabled = true; // Disable the button after submission
+                submitBtn.classList.add("opacity-50", "cursor-not-allowed"); // Add Tailwind classes to style the disabled button
             });
         });
 
@@ -24,6 +42,8 @@
                 if (data.status === 'success') {
                     document.getElementById('review-count').innerText = data.new_count;
                 }
+                submitBtn.disabled = false; // Enable the button again after the operation
+                submitBtn.classList.remove("opacity-50", "cursor-not-allowed"); // Remove the Tailwind classes for the enabled state
             })
             .catch((error) => {
                 console.error('Error:', error);
@@ -31,10 +51,15 @@
         }
     </script>
 </head>
-<body>
-    <h1>Review Submission for Salesman {{ salesman_id }}</h1>
-    <p>Current review count: <span id="review-count">{{ review_count }}</span></p>
-    <button id="submit-review-btn" data-salesman-id="{{ salesman_id }}">I have submitted review</button>
-    <p>Review URL: <a href="{{ review_url }}" target="_blank">{{ review_url }}</a></p>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
+        <h1 class="text-2xl font-bold text-center mb-4">Review Submission for Salesman {{ salesman_id }}</h1>
+        <div class="flex justify-center mb-4">
+            <a href="{{ review_url }}" target="_blank" class="btn-primary text-white py-2 px-4 rounded mr-2 hover:bg-green-600">Go to Review Link</a>
+            <button id="submit-review-btn" data-salesman-id="{{ salesman_id }}" class="btn-secondary text-white py-2 px-4 rounded ml-2 hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed">Submit Review</button>
+        </div>
+        <!-- <p class="mb-4 text-center">Current review count: <span id="review-count" class="font-semibold">{{ review_count }}</span></p> -->
+        <!-- <p class="text-center">Review URL: <a href="{{ review_url }}" target="_blank" class="text-blue-500 hover:underline">{{ review_url }}</a></p> -->
+    </div>
 </body>
 </html>
