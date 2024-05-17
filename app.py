@@ -1,8 +1,8 @@
-
-from flask import Flask, render_template
+from flask import Flask, render_template, redirect, url_for, request, jsonify
 from bs4 import BeautifulSoup
 import requests
 import supabase
+import time
 
 app = Flask(__name__)
 
@@ -18,7 +18,6 @@ def extract_review_count(url):
         response.raise_for_status()  # Raise an exception for bad status codes
 
         soup = BeautifulSoup(response.content, 'html.parser')
-
         # Find the span tag containing the review count
         review_span = soup.find('span', string=lambda text: text and '(' in text and ')' in text)
 
@@ -33,27 +32,75 @@ def extract_review_count(url):
         print(f"Error: An error occurred while fetching the website: {e}")
         return None
 
-def insert_review_count(count):
+def get_current_review_count():
     try:
-        # Check if the record with id=1 already exists
         review_counts_table = sb.table('review_counts')
-        existing_record = review_counts_table.select('*').eq('id', 1).execute()
+        record = review_counts_table.select('count').eq('id', 1).execute()
+        if record.data:
+            return record.data[0]['count']
+        return None
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
 
-        # Upsert the record with id=1 and the provided count
+def insert_or_update_review_count(count):
+    try:
+        review_counts_table = sb.table('review_counts')
         review_counts_table.upsert({"id": 1, "count": count}, on_conflict='id').execute()
     except Exception as e:
         print(f"Error: {e}")
 
+def update_salesman_points(salesman_id):
+    try:
+        salesmen_table = sb.table('salesmen')
+        record = salesmen_table.select('points').eq('id', salesman_id).execute()
+        if record.data:
+            current_points = record.data[0]['points'] or 0
+            new_points = current_points + 1
+            salesmen_table.update({"points": new_points}).eq('id', salesman_id).execute()
+    except Exception as e:
+        print(f"Error: {e}")
+
+@app.route('/app/<int:salesman_id>')
+def app_route(salesman_id):
+    current_review_count = get_current_review_count()
+    if current_review_count is not None:
+        review_url = "https://reviewthis.biz/spring-night-0182"
+        return render_template('review.html', salesman_id=salesman_id, review_count=current_review_count, review_url=review_url)
+    else:
+        return "Error fetching review count from database."
+
+@app.route('/submit_review/<int:salesman_id>', methods=['POST'])
+def submit_review(salesman_id):
+    initial_count = get_current_review_count()
+    if initial_count is None:
+        return jsonify({"status": "error", "message": "Error fetching initial review count."})
+
+    review_extraction_url = "https://www.google.com/search?q=tharakans+royal+jewellery+kunnamkulam&sca_esv=89411bb37f4aa9f8&sca_upv=1&sxsrf=ADLYWILIV0DyK2N0KvOJ-LjlgLynA8U_DQ%3A1715775994290&ei=-qlEZtysEZWbseMPityT2AY&oq=tharakans+royal+kunnamkulam&gs_lp=Egxnd3Mtd2l6LXNlcnAiG3RoYXJha2FucyByb3lhbCBrdW5uYW1rdWxhbSoCCAAyBhAAGAgYHjIGEAAYCBgeMggQABiABBiiBDIIEAAYgAQYogRIgDBQ4hNYtx9wAXgBkAEAmAHDAaABowqqAQQwLjEwuAEByAEA-AEBmAIKoALsCcICChAAGLADGNYEGEfCAg0QLhiABBjHARgNGK8BwgIIEAAYBxgIGB7CAggQABgIGA0YHsICHBAuGIAEGMcBGA0YrwEYlwUY3AQY3gQY4ATYAQHCAgsQABiABBiGAxiKBZgDAIgGAZAGCLoGBggBEAEYFJIHAzEuOaAH4z0&sclient=gws-wiz-serp"
+
+    # Wait some time to allow user to submit the review
+    time.sleep(10)  # Increased wait time to 10 seconds
+
+    new_count = extract_review_count(review_extraction_url)
+    if new_count is None:
+        return jsonify({"status": "error", "message": "Error fetching new review count."})
+
+    if new_count > initial_count:
+        insert_or_update_review_count(new_count)
+        update_salesman_points(salesman_id)
+        return jsonify({"status": "success", "message": f"New review submitted! The total number of reviews is now {new_count}."})
+    else:
+        return jsonify({"status": "error", "message": "No new reviews submitted."})
+
 @app.route('/')
 def index():
-    # Hardcoded URL for demonstration purposes
     website_url = "https://www.google.com/search?q=tharakans+royal+jewellery+kunnamkulam&sca_esv=89411bb37f4aa9f8&sca_upv=1&sxsrf=ADLYWILIV0DyK2N0KvOJ-LjlgLynA8U_DQ%3A1715775994290&ei=-qlEZtysEZWbseMPityT2AY&oq=tharakans+royal+kunnamkulam&gs_lp=Egxnd3Mtd2l6LXNlcnAiG3RoYXJha2FucyByb3lhbCBrdW5uYW1rdWxhbSoCCAAyBhAAGAgYHjIGEAAYCBgeMggQABiABBiiBDIIEAAYgAQYogRIgDBQ4hNYtx9wAXgBkAEAmAHDAaABowqqAQQwLjEwuAEByAEA-AEBmAIKoALsCcICChAAGLADGNYEGEfCAg0QLhiABBjHARgNGK8BwgIIEAAYBxgIGB7CAggQABgIGA0YHsICHBAuGIAEGMcBGA0YrwEYlwUY3AQY3gQY4ATYAQHCAgsQABiABBiGAxiKBZgDAIgGAZAGCLoGBggBEAEYFJIHAzEuOaAH4z0&sclient=gws-wiz-serp"
     review_count = extract_review_count(website_url)
     if review_count:
-        insert_review_count(review_count)
+        insert_or_update_review_count(review_count)
         return render_template('index.html', review_count=review_count)
     else:
         return "Review count not found."
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5001, debug=True)

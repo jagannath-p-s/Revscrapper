@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Review Submission</title>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById("submit-review-btn").addEventListener("click", function() {
+                const salesmanId = this.getAttribute("data-salesman-id");
+                submitReview(salesmanId);
+            });
+        });
+
+        function submitReview(salesmanId) {
+            fetch(`/submit_review/${salesmanId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                if (data.status === 'success') {
+                    document.getElementById('review-count').innerText = data.new_count;
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</head>
+<body>
+    <h1>Review Submission for Salesman {{ salesman_id }}</h1>
+    <p>Current review count: <span id="review-count">{{ review_count }}</span></p>
+    <button id="submit-review-btn" data-salesman-id="{{ salesman_id }}">I have submitted review</button>
+    <p>Review URL: <a href="{{ review_url }}" target="_blank">{{ review_url }}</a></p>
+</body>
+</html>
