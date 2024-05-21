@@ -19,19 +19,19 @@
     </style>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            const submitBtn = document.getElementById("submit-review-btn");
-            const salesmanId = submitBtn.getAttribute("data-salesman-id");
+            const reviewLinkBtn = document.getElementById("review-link-btn");
+            const salesmanId = reviewLinkBtn.getAttribute("data-salesman-id");
 
-            submitBtn.addEventListener("click", function() {
-                submitReview(salesmanId);
-                submitBtn.disabled = true; // Disable the button after submission
-                submitBtn.classList.add("opacity-50", "cursor-not-allowed"); // Add Tailwind classes to style the disabled button
+            reviewLinkBtn.addEventListener("click", function() {
+                setTimeout(() => {
+                    checkReviewIncrement(salesmanId);
+                }, 12000);
             });
         });
 
-        function submitReview(salesmanId) {
-            fetch(`/submit_review/${salesmanId}`, {
-                method: 'POST',
+        function checkReviewIncrement(salesmanId) {
+            fetch(`/check_review_increment/${salesmanId}`, {
+                method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -42,8 +42,6 @@
                 if (data.status === 'success') {
                     document.getElementById('review-count').innerText = data.new_count;
                 }
-                submitBtn.disabled = false; // Enable the button again after the operation
-                submitBtn.classList.remove("opacity-50", "cursor-not-allowed"); // Remove the Tailwind classes for the enabled state
             })
             .catch((error) => {
                 console.error('Error:', error);
@@ -55,11 +53,9 @@
     <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
         <h1 class="text-2xl font-bold text-center mb-4">Review Submission for Salesman {{ salesman_id }}</h1>
         <div class="flex justify-center mb-4">
-            <a href="{{ review_url }}" target="_blank" class="btn-primary text-white py-2 px-4 rounded mr-2 hover:bg-green-600">Go to Review Link</a>
-            <button id="submit-review-btn" data-salesman-id="{{ salesman_id }}" class="btn-secondary text-white py-2 px-4 rounded ml-2 hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed">Submit Review</button>
+            <a href="{{ review_url }}" id="review-link-btn" target="_blank" data-salesman-id="{{ salesman_id }}" class="btn-primary text-white py-2 px-4 rounded mr-2 hover:bg-green-600">Go to Review Link</a>
         </div>
-        <!-- <p class="mb-4 text-center">Current review count: <span id="review-count" class="font-semibold">{{ review_count }}</span></p> -->
-        <!-- <p class="text-center">Review URL: <a href="{{ review_url }}" target="_blank" class="text-blue-500 hover:underline">{{ review_url }}</a></p> -->
+        <p class="mb-4 text-center">Current review count: <span id="review-count" class="font-semibold">{{ review_count }}</span></p>
     </div>
 </body>
 </html>
